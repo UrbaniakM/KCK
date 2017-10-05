@@ -4,6 +4,7 @@ import urllib.request
 import codecs
 import csv
 import matplotlib.pyplot as plt
+import numpy as np
 
 def main():
     urlStream = [ \
@@ -13,22 +14,40 @@ def main():
         urllib.request.urlopen("http://www.cs.put.poznan.pl/wjaskowski/pub/teaching/kck/labs/python/ipd-choices-9-005/cel.csv"), \
         urllib.request.urlopen("http://www.cs.put.poznan.pl/wjaskowski/pub/teaching/kck/labs/python/ipd-choices-9-005/rsel.csv")]
     seriesNames = ["1-Evol-RS", "1-Coev-RS", "2-Coev-RS", "1-Coev", "2-Coev"]
-    plt.figure(figsize=(3, 3))
+    boxPlotData = []
+    plt.figure(figsize=(8, 5))
+    scattPlot = plt.subplot('121')
+    boxPlot = plt.subplot('122')
+    fontSize = 8
     for i in range(len(urlStream)):
         csvReader = csv.reader(codecs.iterdecode(urlStream[i], 'utf-8'))
-        generation = []
         gamesPlayed = [] #x1000
         gamesPercentWon = []
+        gamesWon = []
         next(csvReader, None)
         for row in csvReader:
-            generation.append(int(row[0]))
             gamesPlayed.append(float(row[1])/1000)
             suma = 0.0
             for col in range(2,len(row)):
                 suma += float(row[col])
+                gamesWon.append(float(row[col])*100)
             gamesPercentWon.append(suma*100/(len(row) - 2))
-        plt.plot(gamesPlayed, gamesPercentWon, label = seriesNames[i])
-    plt.legend()
+        scattPlot.plot(gamesPlayed, gamesPercentWon, label = seriesNames[i])
+        boxPlotData.append(gamesWon)
+    boxPlot.boxplot(boxPlotData)
+    scattPlot.legend()
+    scattPlot.tick_params('both',direction = 'in', labelsize = fontSize)
+    scattPlot.set_xticks([x*100 for x in range(0, 6)])
+    scattPlot.set_yticks([x*5 for x in range(12, 21)])
+    scattPlot.set_ylim(60, 100)
+    scattPlot.set_xlim(0, 500)
+    scattPlot.set_xlabel("Rozegranych gier (×1000)", fontsize = fontSize)
+    scattPlot.set_ylabel("Odsetek wygranych gier [%]",multialignment='center', fontsize = fontSize)
+    topAxis = scattPlot.twiny()
+    topAxis.set_xlim(0,200)
+    topAxis.set_xticks([x*40 for x in range(0, 6)])
+    topAxis.set_xlabel('Pokolenie')
+    topAxis.tick_params('both',direction = 'in', labelsize = fontSize)
     plt.savefig('1_Urbaniak.pdf')
     plt.close()
         
