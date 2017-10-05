@@ -25,18 +25,19 @@ def main():
         csvReader = csv.reader(codecs.iterdecode(urlStream[i], 'utf-8'))
         gamesPlayed = [] #x1000
         gamesPercentWon = []
-        gamesWon = []
+        finalResult = []
         next(csvReader, None)
         for row in csvReader:
             gamesPlayed.append(float(row[1])/1000)
             suma = 0.0
             for col in range(2,len(row)):
                 suma += float(row[col])
-                gamesWon.append(float(row[col])*100)
+                if row[0] == '199':
+                    finalResult.append(float(row[col])*100)
             gamesPercentWon.append(suma*100/(len(row) - 2))
         scattPlot.plot(gamesPlayed, gamesPercentWon, label = seriesNames[i], marker = markers[i], markevery=25, color = colors[i], markeredgecolor='k', linewidth = 1)
-        boxPlotData.append(gamesWon)
-    boxPlot.boxplot(boxPlotData)
+        boxPlotData.append(finalResult)
+    boxPlot.boxplot(boxPlotData, notch=True, sym='+', color='b')
     boxPlot.yaxis.tick_right()
     boxPlot.set_ylim(60,100)
     boxPlot.tick_params('both',direction = 'in', labelsize = fontSize)
