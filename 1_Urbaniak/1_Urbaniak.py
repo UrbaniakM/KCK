@@ -8,12 +8,14 @@ import numpy as np
 
 def main():
     urlStream = [ \
-        urllib.request.urlopen("http://www.cs.put.poznan.pl/wjaskowski/pub/teaching/kck/labs/python/ipd-choices-9-005/2cel-rs.csv"), \
-        urllib.request.urlopen("http://www.cs.put.poznan.pl/wjaskowski/pub/teaching/kck/labs/python/ipd-choices-9-005/2cel.csv"), \
+        urllib.request.urlopen("http://www.cs.put.poznan.pl/wjaskowski/pub/teaching/kck/labs/python/ipd-choices-9-005/rsel.csv"), \
         urllib.request.urlopen("http://www.cs.put.poznan.pl/wjaskowski/pub/teaching/kck/labs/python/ipd-choices-9-005/cel-rs.csv"), \
+        urllib.request.urlopen("http://www.cs.put.poznan.pl/wjaskowski/pub/teaching/kck/labs/python/ipd-choices-9-005/2cel-rs.csv"), \
         urllib.request.urlopen("http://www.cs.put.poznan.pl/wjaskowski/pub/teaching/kck/labs/python/ipd-choices-9-005/cel.csv"), \
-        urllib.request.urlopen("http://www.cs.put.poznan.pl/wjaskowski/pub/teaching/kck/labs/python/ipd-choices-9-005/rsel.csv")]
+        urllib.request.urlopen("http://www.cs.put.poznan.pl/wjaskowski/pub/teaching/kck/labs/python/ipd-choices-9-005/2cel.csv")]
     seriesNames = ["1-Evol-RS", "1-Coev-RS", "2-Coev-RS", "1-Coev", "2-Coev"]
+    markers = ['8', 'v', 'D', 's', 'd']
+    colors = ['b', 'g', 'r', 'k', '#ee82ee']
     boxPlotData = []
     plt.figure(figsize=(7, 6))
     scattPlot = plt.subplot('121')
@@ -32,13 +34,14 @@ def main():
                 suma += float(row[col])
                 gamesWon.append(float(row[col])*100)
             gamesPercentWon.append(suma*100/(len(row) - 2))
-        scattPlot.plot(gamesPlayed, gamesPercentWon, label = seriesNames[i])
+        scattPlot.plot(gamesPlayed, gamesPercentWon, label = seriesNames[i], marker = markers[i], markevery=25, color = colors[i], markeredgecolor='k', linewidth = 1)
         boxPlotData.append(gamesWon)
     boxPlot.boxplot(boxPlotData)
     boxPlot.yaxis.tick_right()
     boxPlot.set_ylim(60,100)
     boxPlot.tick_params('both',direction = 'in', labelsize = fontSize)
     boxPlot.grid(color='#D3D3D3', linestyle='dotted', linewidth=1)
+    boxPlot.set_xticklabels(seriesNames, rotation=45)
     scattPlot.legend()
     scattPlot.tick_params('both',direction = 'in', labelsize = fontSize)
     scattPlot.set_xticks([x*100 for x in range(0, 6)])
