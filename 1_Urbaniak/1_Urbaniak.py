@@ -15,7 +15,7 @@ def main():
         urllib.request.urlopen("http://www.cs.put.poznan.pl/wjaskowski/pub/teaching/kck/labs/python/ipd-choices-9-005/rsel.csv")]
     seriesNames = ["1-Evol-RS", "1-Coev-RS", "2-Coev-RS", "1-Coev", "2-Coev"]
     boxPlotData = []
-    plt.figure(figsize=(8, 5))
+    plt.figure(figsize=(7, 6))
     scattPlot = plt.subplot('121')
     boxPlot = plt.subplot('122')
     fontSize = 8
@@ -35,6 +35,10 @@ def main():
         scattPlot.plot(gamesPlayed, gamesPercentWon, label = seriesNames[i])
         boxPlotData.append(gamesWon)
     boxPlot.boxplot(boxPlotData)
+    boxPlot.yaxis.tick_right()
+    boxPlot.set_ylim(60,100)
+    boxPlot.tick_params('both',direction = 'in', labelsize = fontSize)
+    boxPlot.grid(color='#D3D3D3', linestyle='dotted', linewidth=1)
     scattPlot.legend()
     scattPlot.tick_params('both',direction = 'in', labelsize = fontSize)
     scattPlot.set_xticks([x*100 for x in range(0, 6)])
@@ -43,10 +47,11 @@ def main():
     scattPlot.set_xlim(0, 500)
     scattPlot.set_xlabel("Rozegranych gier (×1000)", fontsize = fontSize)
     scattPlot.set_ylabel("Odsetek wygranych gier [%]",multialignment='center', fontsize = fontSize)
+    scattPlot.grid(color='#D3D3D3', linestyle='dotted', linewidth=1)
     topAxis = scattPlot.twiny()
     topAxis.set_xlim(0,200)
     topAxis.set_xticks([x*40 for x in range(0, 6)])
-    topAxis.set_xlabel('Pokolenie')
+    topAxis.set_xlabel('Pokolenie', fontsize = fontSize)
     topAxis.tick_params('both',direction = 'in', labelsize = fontSize)
     plt.savefig('1_Urbaniak.pdf')
     plt.close()
