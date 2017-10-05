@@ -37,7 +37,7 @@ def main():
             gamesPercentWon.append(suma*100/(len(row) - 2))
         scattPlot.plot(gamesPlayed, gamesPercentWon, label = seriesNames[i], marker = markers[i], markevery=25, color = colors[i], markeredgecolor='k', linewidth = 1)
         boxPlotData.append(finalResult)
-    boxPlot.boxplot(boxPlotData, notch=True, sym='+', color='b')
+    boxPlot.boxplot(boxPlotData, notch=True, sym='+')
     boxPlot.yaxis.tick_right()
     boxPlot.set_ylim(60,100)
     boxPlot.tick_params('both',direction = 'in', labelsize = fontSize)
