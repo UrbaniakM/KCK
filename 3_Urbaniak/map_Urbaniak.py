@@ -9,6 +9,7 @@ import numpy as np
 import urllib.request
 import csv
 import codecs
+import math
 from matplotlib import colors
 
 def loadMapFromURL(url):
@@ -25,7 +26,7 @@ def loadMapFromURL(url):
             map[row,col] = float(line[col])
         row += 1
 
-    return map;
+    return (delta,map);
 
 
 # 0 <= h <= 360, 0 <= s,v <= 1
@@ -73,29 +74,84 @@ def gradient_map_shading_lower(v):
 def gradient_map_shading_higher(v):
     return hsv2rgb(160-v,1.0, 0.75)
 
+
 def createImg(mapLevels):
     img = np.zeros((500, 500, 3))
-
     for row in range(500):
         for col in range(500):
             img[row, col] = gradient_map_base(mapLevels[row, col]) # bazowy import
-        for col in range(1,500):
-            if mapLevels[row,col-1] > mapLevels[row,col]: # cieniowanie na podstawie wysokosci
-                img[row, col] = gradient_map_shading_higher(mapLevels[row, col])
-            else:   # cieniowanie na podstawie wysokosci
-                img[row, col] = gradient_map_shading_lower(mapLevels[row, col])
+        #for col in range(1,500):
+        #    if mapLevels[row,col-1] > mapLevels[row,col]: # cieniowanie na podstawie wysokosci
+        #        img[row, col] = gradient_map_shading_higher(mapLevels[row, col])
+        #    else:   # cieniowanie na podstawie wysokosci
+        #        img[row, col] = gradient_map_shading_lower(mapLevels[row, col])
+    return img
 
+def slope(fx, fy):
+    return math.atan((fx**2 + fy**2)**(1/2)) * 180 / math.pi
+
+def aspect(fx,fy):
+    if fx == 0:
+        return 0
+    return 270 + math.atan(fy/fx) - 90 * fx / math.fabs(fx)
+
+def gradient_map_final(h, slo, asp):
+    #TODO swiatlo jest z polnocnego zachodu, z tamtej strony beda rozjasniane, z drugiej przyciemniane
+    if asp > 180:
+        sat = 1.0 - 8*slo
+        val = 1.0
+    else:
+        sat = 1.0
+        val = 1.0 - 8*slo
+    if sat < 0:
+        print('sat', sat)
+    if val < 0:
+        print('val', val)
+    return hsv2rgb(160 - h, sat, val)
+    #return hsv2rgb(160 - h, 1.0, 1.0 - 5*slo) # - to te 'znosne'
+
+def vecSun(x,y,z):
+    sunX = -1000
+    sunY = 1000
+    sunZ = 10000
+
+    return (sunX - x, sunY - y, sunZ - z)
+
+def angleVectors(x1, y1, z1, x2, y2, z2 ):
+    val = math.acos((x1*x2 + y1*y2 + z1*z2)/(x1**2+y1**2+z1**2)**(1/2)/(x2**2+y2**2+z2**2)**(1/2))
+    return val
+
+def vecNorm(x,y,z,angle):
+    #TODO
+    return 0
+
+def createImgFinal(mapLevels, delta):
+    #TODO
+    img = np.zeros((500, 500, 3))
+    aspects = []
+    for row in range(0,498):
+        for col in range(498):
+            fx = mapLevels[row,col] - mapLevels[row + 2,col]
+            fx += mapLevels[row,col + 1] - mapLevels[row + 2,col + 1]
+            fx += mapLevels[row,col + 2] - mapLevels[row + 2,col + 2]
+            fx /= 6 * delta
+            fy = mapLevels[row,col + 2] - mapLevels[row,col]
+            fy += mapLevels[row + 1,col + 2] - mapLevels[row + 1,col]
+            fy += mapLevels[row + 2, col + 2] - mapLevels[row + 2, col]
+            fy /= 6 * delta
+            img[row, col] = gradient_map_final(mapLevels[row, col], slope(fx,fy), aspect(fx,fy))
     return img
 
 
 if __name__ == '__main__':
-    mapLevels = loadMapFromURL('http://www.cs.put.poznan.pl/wjaskowski/pub/teaching/kck/kolorowanie_mapy/big.dem')
+    (delta,mapLevels) = loadMapFromURL('http://www.cs.put.poznan.pl/wjaskowski/pub/teaching/kck/kolorowanie_mapy/big.dem')
     fig = plt.figure(figsize=(6, 6))
     #print( mapLevels.shape )
     #print ( np.amax(mapLevels) )
     #print ( np.amin(mapLevels) )
 
-    img = createImg(mapLevels)
+    #img = createImg(mapLevels)
+    img = createImgFinal(mapLevels, delta)
 
     mapPlot = plt.subplot('111')
     mapPlot.imshow(img, aspect='auto')
