@@ -156,7 +156,6 @@ def gradient_hsv_unknown(v):
 
 
 def gradient_hsv_custom(v):
-    #TODO
     if v < 0.5 :
         s = v
         val = 1 - v
