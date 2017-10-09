@@ -95,40 +95,34 @@ def aspect(fx,fy):
         return 0
     return 270 + math.atan(fy/fx) - 90 * fx / math.fabs(fx)
 
-def gradient_map_final(h, slo, asp):
+def gradient_map_final(h, slo):
     #TODO swiatlo jest z polnocnego zachodu, z tamtej strony beda rozjasniane, z drugiej przyciemniane
-    if asp > 180:
-        sat = 1.0 - 8*slo
+    sat = 1.0
+    val = 1.0 - 2*slo/100
+    if slo/100 > 0.45:
+        sat = 1.0 - 2*slo/100
         val = 1.0
-    else:
-        sat = 1.0
-        val = 1.0 - 8*slo
-    if sat < 0:
-        print('sat', sat)
-    if val < 0:
-        print('val', val)
     return hsv2rgb(160 - h, sat, val)
     #return hsv2rgb(160 - h, 1.0, 1.0 - 5*slo) # - to te 'znosne'
 
 def vecSun(x,y,z):
-    sunX = -1000
-    sunY = 1000
-    sunZ = 10000
+    sunX = 0
+    sunY = 500
+    sunZ = 3000
 
     return (sunX - x, sunY - y, sunZ - z)
 
 def angleVectors(x1, y1, z1, x2, y2, z2 ):
     val = math.acos((x1*x2 + y1*y2 + z1*z2)/(x1**2+y1**2+z1**2)**(1/2)/(x2**2+y2**2+z2**2)**(1/2))
-    return val
+    return val * 180 / math.pi
 
-def vecNorm(x,y,z,angle):
-    #TODO
-    return 0
+def vecNorm(fx,fy):
+    return (-fx,-fy,1)
 
 def createImgFinal(mapLevels, delta):
     #TODO
     img = np.zeros((500, 500, 3))
-    aspects = []
+    angles = []
     for row in range(0,498):
         for col in range(498):
             fx = mapLevels[row,col] - mapLevels[row + 2,col]
@@ -139,7 +133,12 @@ def createImgFinal(mapLevels, delta):
             fy += mapLevels[row + 1,col + 2] - mapLevels[row + 1,col]
             fy += mapLevels[row + 2, col + 2] - mapLevels[row + 2, col]
             fy /= 6 * delta
-            img[row, col] = gradient_map_final(mapLevels[row, col], slope(fx,fy), aspect(fx,fy))
+            (xs,ys,zs) = vecSun(row,col,mapLevels[row,col])
+            xsl, ysl, zsl = vecNorm(fx,fy)
+            #img[row, col] = gradient_map_final(mapLevels[row, col], slope(fx,fy))
+            #img[row, col] = gradient_map_final(mapLevels[row, col], angleVectors( xs,ys,zs, xsl, ysl, zsl ))
+            angles.append( angleVectors( xs,ys,zs, xsl, ysl, zsl ) )
+    print(min(angles),max(angles))
     return img
 
 
