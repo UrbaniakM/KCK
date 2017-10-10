@@ -12,13 +12,15 @@ import codecs
 import math
 from matplotlib import colors
 
+angles = []
+
 def loadMapFromURL(url):
     urlStream = urllib.request.urlopen(url)
     csvReader = csv.reader(codecs.iterdecode(urlStream, 'utf-8'), delimiter=' ')
     firstRow = next(csvReader)
     width = int(firstRow[0])
     height = int(firstRow[1])
-    delta = int(firstRow[2])
+    delta = int(firstRow[2])/100
     map = np.empty([width,height])
     row = 0
     for line in csvReader:
@@ -98,17 +100,20 @@ def aspect(fx,fy):
 def gradient_map_final(h, slo):
     #TODO swiatlo jest z polnocnego zachodu, z tamtej strony beda rozjasniane, z drugiej przyciemniane
     sat = 1.0
-    val = 1.0 - 2*slo/100
-    if slo/100 > 0.45:
-        sat = 1.0 - 2*slo/100
-        val = 1.0
+    val = 1.0-2*slo/100
+    if slo/100 > 0.16:
+        sat = 1.0# - slo/3/100
+        val = 1.0-slo/100#1.0-4*/slo/100
+    elif slo/100 < 0.04:
+        sat = 1.0#1.0 - 2*slo/100
+        val = 1.0-2*slo/100#-5*slo/100
     return hsv2rgb(160 - h, sat, val)
     #return hsv2rgb(160 - h, 1.0, 1.0 - 5*slo) # - to te 'znosne'
 
 def vecSun(x,y,z):
-    sunX = 0
-    sunY = 500
-    sunZ = 3000
+    sunX = -100 #w kierunku 0
+    sunY = -50 #w kierunku 100
+    sunZ = 2500
 
     return (sunX - x, sunY - y, sunZ - z)
 
@@ -122,7 +127,6 @@ def vecNorm(fx,fy):
 def createImgFinal(mapLevels, delta):
     #TODO
     img = np.zeros((500, 500, 3))
-    angles = []
     for row in range(0,498):
         for col in range(498):
             fx = mapLevels[row,col] - mapLevels[row + 2,col]
@@ -136,18 +140,16 @@ def createImgFinal(mapLevels, delta):
             (xs,ys,zs) = vecSun(row,col,mapLevels[row,col])
             xsl, ysl, zsl = vecNorm(fx,fy)
             #img[row, col] = gradient_map_final(mapLevels[row, col], slope(fx,fy))
-            #img[row, col] = gradient_map_final(mapLevels[row, col], angleVectors( xs,ys,zs, xsl, ysl, zsl ))
+            img[row, col] = gradient_map_final(mapLevels[row, col], angleVectors( xs,ys,zs, xsl, ysl, zsl ))
             angles.append( angleVectors( xs,ys,zs, xsl, ysl, zsl ) )
-    print(min(angles),max(angles))
+    print(min(angles)/100,max(angles)/100)
+    print( sum(angles)/len(angles)/100 )
     return img
 
 
 if __name__ == '__main__':
     (delta,mapLevels) = loadMapFromURL('http://www.cs.put.poznan.pl/wjaskowski/pub/teaching/kck/kolorowanie_mapy/big.dem')
     fig = plt.figure(figsize=(6, 6))
-    #print( mapLevels.shape )
-    #print ( np.amax(mapLevels) )
-    #print ( np.amin(mapLevels) )
 
     #img = createImg(mapLevels)
     img = createImgFinal(mapLevels, delta)
@@ -157,4 +159,4 @@ if __name__ == '__main__':
     mapPlot.tick_params('both', direction='in')
 
 
-    fig.savefig('map_Urbaniak.pdf')
+fig.savefig('map_Urbaniak.pdf')
