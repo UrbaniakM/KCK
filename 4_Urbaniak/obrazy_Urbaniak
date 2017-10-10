@@ -1,0 +1,7 @@
+from skimage import data, io
+from matplotlib import pyplot as plt
+image = data.astronaut()
+# Albo: coins(), page(), moon()
+io.imshow(image)
+plt.show()
+# Niepotrzebne, jesli 
