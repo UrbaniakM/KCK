@@ -1,7 +1,30 @@
-from skimage import data, io
+from skimage import data, io, measure, color, feature, filters
 from matplotlib import pyplot as plt
-image = data.astronaut()
-# Albo: coins(), page(), moon()
-io.imshow(image)
-plt.show()
-# Niepotrzebne, jesli 
+import numpy as np
+
+def detect_edges(image, n):
+    #subPlt = plt.subplot(7,3,n+1, facecolor='black')
+    subPlt = plt.subplot(111, facecolor='black')
+    subPlt.axis('off')
+
+    imageGray = color.rgb2grey(image)
+    edges = measure.find_contours(imageGray, level=0.6, fully_connected='low', positive_orientation='high')
+    #io.imshow(image)
+    for n, edge in enumerate(edges):
+        coords = measure.approximate_polygon(edge, tolerance=5.5)
+        subPlt.plot(coords[:, 1], coords[:, 0], linewidth=2)
+        #subPlt.plot(edge[:, 1], edge[:, 0], linewidth=2)
+
+if __name__ == '__main__':
+
+    plt.figure(figsize=(15,15))
+    images = io.ImageCollection('/home/mateusz/KCK/4_Urbaniak/images/*.jpg')
+
+
+    #for n,image in enumerate(images):
+    #    detect_edges(image,n)
+
+
+    detect_edges(images[0],0)
+
+    plt.savefig('obrazy_Urbaniak.pdf')
