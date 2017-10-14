@@ -1,0 +1,15 @@
+#/usr/bin/env ipython
+store = !ls -lS | awk '{print $5, $9}'
+store = store.fields()
+store.remove([])
+
+maxRange = len(store)
+i = 0
+while i < maxRange:
+    if int(store[i][0]) < 4000 or int(store[i][0]) > 11000:
+        store.remove(store[i])
+        i -= 1
+        maxRange -= 1
+    i += 1
+        
+print(store)
