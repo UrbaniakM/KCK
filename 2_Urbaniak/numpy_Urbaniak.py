@@ -14,7 +14,7 @@ transponedMatrix = np.array([[ 2, 3, 1],
 
 dotMatrix = cuttedMatrix.dot(transponedMatrix)
 
-x = np.linspace(-np.pi,np.pi,100) #KROK CO: PI, 10, 100? O CO CHODZI?
+x = np.linspace(-np.pi,np.pi,100) # STEPS
 v=np.sin(x)
 
 fig = plt.figure(figsize=(3,3))
