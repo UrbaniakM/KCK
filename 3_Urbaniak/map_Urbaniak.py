@@ -12,8 +12,6 @@ import codecs
 import math
 from matplotlib import colors
 
-angles = []
-
 def loadMapFromURL(url):
     urlStream = urllib.request.urlopen(url)
     csvReader = csv.reader(codecs.iterdecode(urlStream, 'utf-8'), delimiter=' ')
@@ -77,42 +75,38 @@ def gradient_map_shading_higher(v):
     return hsv2rgb(160-v,1.0, 0.75)
 
 
-def createImg(mapLevels):
+def createImg(mapLevels, delta):
     img = np.zeros((500, 500, 3))
     for row in range(500):
         for col in range(500):
             img[row, col] = gradient_map_base(mapLevels[row, col]) # bazowy import
-        #for col in range(1,500):
-        #    if mapLevels[row,col-1] > mapLevels[row,col]: # cieniowanie na podstawie wysokosci
-        #        img[row, col] = gradient_map_shading_higher(mapLevels[row, col])
-        #    else:   # cieniowanie na podstawie wysokosci
-        #        img[row, col] = gradient_map_shading_lower(mapLevels[row, col])
+        for col in range(1,500):
+            if mapLevels[row,col-1] > mapLevels[row,col]: # cieniowanie na podstawie wysokosci
+                img[row, col] = gradient_map_shading_higher(mapLevels[row, col])
+            else:   # cieniowanie na podstawie wysokosci
+                img[row, col] = gradient_map_shading_lower(mapLevels[row, col])
     return img
 
-def slope(fx, fy):
+def slope(fx, fy): # bedzie prawdopodobnie niepotrzebne
     return math.atan((fx**2 + fy**2)**(1/2)) * 180 / math.pi
 
-def aspect(fx,fy):
+def aspect(fx,fy): # bedzie prwadopodobnei niepotrzebne
     if fx == 0:
         return 0
     return 270 + math.atan(fy/fx) - 90 * fx / math.fabs(fx)
 
-def gradient_map_final(h, slo):
-    #TODO swiatlo jest z polnocnego zachodu, z tamtej strony beda rozjasniane, z drugiej przyciemniane
-    sat = 1.0
-    val = 1.0-2*slo/100
-    if slo/100 > 0.16:
-        sat = 1.0# - slo/3/100
-        val = 1.0-slo/100#1.0-4*/slo/100
-    elif slo/100 < 0.04:
-        sat = 1.0#1.0 - 2*slo/100
-        val = 1.0-2*slo/100#-5*slo/100
+def gradient_map_final(h, angle, maxMinAngles):
+    #sat = 1
+    #val = 1
+    #if angle > 0.1:
+    sat = 1-angle/maxMinAngles
+    val = 1-angle/maxMinAngles/4
     return hsv2rgb(160 - h, sat, val)
-    #return hsv2rgb(160 - h, 1.0, 1.0 - 5*slo) # - to te 'znosne'
+
 
 def vecSun(x,y,z):
-    sunX = -100 #w kierunku 0
-    sunY = -50 #w kierunku 100
+    sunX = 200 #-100
+    sunY = 100 #-50
     sunZ = 2500
 
     return (sunX - x, sunY - y, sunZ - z)
@@ -124,9 +118,8 @@ def angleVectors(x1, y1, z1, x2, y2, z2 ):
 def vecNorm(fx,fy):
     return (-fx,-fy,1)
 
-def createImgFinal(mapLevels, delta):
-    #TODO
-    img = np.zeros((500, 500, 3))
+def calculateAngles():
+    angles = np.zeros([500, 500])
     for row in range(0,498):
         for col in range(498):
             fx = mapLevels[row,col] - mapLevels[row + 2,col]
@@ -138,12 +131,25 @@ def createImgFinal(mapLevels, delta):
             fy += mapLevels[row + 2, col + 2] - mapLevels[row + 2, col]
             fy /= 6 * delta
             (xs,ys,zs) = vecSun(row,col,mapLevels[row,col])
+            xs /= zs
+            ys /= zs
+            zs /= zs #normalizacja
             xsl, ysl, zsl = vecNorm(fx,fy)
-            #img[row, col] = gradient_map_final(mapLevels[row, col], slope(fx,fy))
-            img[row, col] = gradient_map_final(mapLevels[row, col], angleVectors( xs,ys,zs, xsl, ysl, zsl ))
-            angles.append( angleVectors( xs,ys,zs, xsl, ysl, zsl ) )
-    print(min(angles)/100,max(angles)/100)
-    print( sum(angles)/len(angles)/100 )
+            angles[row,col] = angleVectors( xs,ys,zs, xsl, ysl, zsl )/100
+    return angles
+  
+
+def createImgFinal(mapLevels, delta):
+    img = np.zeros((500, 500, 3))
+    for row in range(500):
+        for col in range(500):
+            img[row, col] = gradient_map_base(mapLevels[row, col]) # bazowy import
+    angles = calculateAngles()
+    maxMinAngles = np.amax(angles) - np.amin(angles)
+    print(np.amax(angles), np.amin(angles))
+    for row in range(0,498):
+        for col in range(0,498):
+            img[row,col] = gradient_map_final(mapLevels[row,col], angles[row,col], maxMinAngles)   
     return img
 
 
@@ -153,7 +159,6 @@ if __name__ == '__main__':
 
     #img = createImg(mapLevels)
     img = createImgFinal(mapLevels, delta)
-
     mapPlot = plt.subplot('111')
     mapPlot.imshow(img, aspect='auto')
     mapPlot.tick_params('both', direction='in')
