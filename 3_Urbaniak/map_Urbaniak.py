@@ -12,8 +12,6 @@ import codecs
 import math
 from matplotlib import colors
 
-angles = []
-
 def loadMapFromURL(url):
     urlStream = urllib.request.urlopen(url)
     csvReader = csv.reader(codecs.iterdecode(urlStream, 'utf-8'), delimiter=' ')
@@ -77,22 +75,22 @@ def gradient_map_shading_higher(v):
     return hsv2rgb(160-v,1.0, 0.75)
 
 
-def createImg(mapLevels):
+def createImg(mapLevels, delta):
     img = np.zeros((500, 500, 3))
     for row in range(500):
         for col in range(500):
             img[row, col] = gradient_map_base(mapLevels[row, col]) # bazowy import
-        #for col in range(1,500):
-        #    if mapLevels[row,col-1] > mapLevels[row,col]: # cieniowanie na podstawie wysokosci
-        #        img[row, col] = gradient_map_shading_higher(mapLevels[row, col])
-        #    else:   # cieniowanie na podstawie wysokosci
-        #        img[row, col] = gradient_map_shading_lower(mapLevels[row, col])
+        for col in range(1,500):
+            if mapLevels[row,col-1] > mapLevels[row,col]: # cieniowanie na podstawie wysokosci
+                img[row, col] = gradient_map_shading_higher(mapLevels[row, col])
+            else:   # cieniowanie na podstawie wysokosci
+                img[row, col] = gradient_map_shading_lower(mapLevels[row, col])
     return img
 
-def slope(fx, fy):
+def slope(fx, fy): # bedzie prawdopodobnie niepotrzebne
     return math.atan((fx**2 + fy**2)**(1/2)) * 180 / math.pi
 
-def aspect(fx,fy):
+def aspect(fx,fy): # bedzie prwadopodobnei niepotrzebne
     if fx == 0:
         return 0
     return 270 + math.atan(fy/fx) - 90 * fx / math.fabs(fx)
@@ -112,7 +110,6 @@ def gradient_map_final(h, angle, position, normalize_vector):
     val += 0.20
     return hsv2rgb(160 - h, sat, val)
 
-
 def vecToSun(x,y,z):
     sunX = 200
     sunY = 100
@@ -128,7 +125,7 @@ def vecToSun(x,y,z):
     retZ /= vecLenght
     return (retX, retY, retZ)
 
-def vector_between_angles(x1, y1, z1, x2, y2, z2 ):
+def angle_between_vectors(x1, y1, z1, x2, y2, z2 ):
     val = math.acos((x1*x2 + y1*y2 + z1*z2)/(x1**2+y1**2+z1**2)**(1/2)/(x2**2+y2**2+z2**2)**(1/2))
     return val
 
@@ -156,7 +153,7 @@ def calculateAngles():
             fy /= 6 * delta
             (xs,ys,zs) = vecToSun(row,col,mapLevels[row,col])
             xsl, ysl, zsl = vecNorm(fx,fy)
-            angles[row,col] = vector_between_angles( xs,ys,zs, xsl,ysl,zsl )
+            angles[row,col] = angle_between_vectors( xs,ys,zs, xsl,ysl,zsl )
     return angles
   
 
