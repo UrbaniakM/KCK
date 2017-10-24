@@ -97,36 +97,53 @@ def aspect(fx,fy):
         return 0
     return 270 + math.atan(fy/fx) - 90 * fx / math.fabs(fx)
 
-def gradient_map_final(h, slo):
-    #TODO swiatlo jest z polnocnego zachodu, z tamtej strony beda rozjasniane, z drugiej przyciemniane
-    sat = 1.0
-    val = 1.0-2*slo/100
-    if slo/100 > 0.16:
-        sat = 1.0# - slo/3/100
-        val = 1.0-slo/100#1.0-4*/slo/100
-    elif slo/100 < 0.04:
-        sat = 1.0#1.0 - 2*slo/100
-        val = 1.0-2*slo/100#-5*slo/100
+def gradient_map_final(h, angle, position, normalize_vector):
+    sat = 1
+    val = 1
+    position -= 0.5
+    if position < 0:
+        sat -= np.sin(angle)*abs(position)*1.25
+    else:
+        val -= np.sin(angle)*abs(position)/2
+    if normalize_vector < 0:
+        sat = (1+normalize_vector + sat)/2
+    else:
+        val = (1-normalize_vector + val)/2
+    val += 0.20
     return hsv2rgb(160 - h, sat, val)
-    #return hsv2rgb(160 - h, 1.0, 1.0 - 5*slo) # - to te 'znosne'
 
-def vecSun(x,y,z):
-    sunX = -100 #w kierunku 0
-    sunY = -50 #w kierunku 100
+
+def vecToSun(x,y,z):
+    sunX = 200
+    sunY = 100
     sunZ = 2500
 
-    return (sunX - x, sunY - y, sunZ - z)
+    retX = sunZ - z
+    retY = sunX - x
+    retZ = sunZ - z
+    #normalizacja
+    vecLenght = abs(retX) + abs(retY) + abs(retZ)
+    retX /= vecLenght
+    retY /= vecLenght
+    retZ /= vecLenght
+    return (retX, retY, retZ)
 
-def angleVectors(x1, y1, z1, x2, y2, z2 ):
+def vector_between_angles(x1, y1, z1, x2, y2, z2 ):
     val = math.acos((x1*x2 + y1*y2 + z1*z2)/(x1**2+y1**2+z1**2)**(1/2)/(x2**2+y2**2+z2**2)**(1/2))
-    return val * 180 / math.pi
+    return val
 
 def vecNorm(fx,fy):
-    return (-fx,-fy,1)
+    retX = -fx
+    retY = -fy
+    retZ = 1
+    vecLenght = abs(retX) + abs(retY) + abs(retZ)
+    retX /= vecLenght
+    retY /= vecLenght
+    retZ /= vecLenght
+    return (retX, retY, retZ)
 
-def createImgFinal(mapLevels, delta):
-    #TODO
-    img = np.zeros((500, 500, 3))
+def calculateAngles():
+    angles = np.zeros([500, 500])
     for row in range(0,498):
         for col in range(498):
             fx = mapLevels[row,col] - mapLevels[row + 2,col]
@@ -137,13 +154,27 @@ def createImgFinal(mapLevels, delta):
             fy += mapLevels[row + 1,col + 2] - mapLevels[row + 1,col]
             fy += mapLevels[row + 2, col + 2] - mapLevels[row + 2, col]
             fy /= 6 * delta
-            (xs,ys,zs) = vecSun(row,col,mapLevels[row,col])
+            (xs,ys,zs) = vecToSun(row,col,mapLevels[row,col])
             xsl, ysl, zsl = vecNorm(fx,fy)
-            #img[row, col] = gradient_map_final(mapLevels[row, col], slope(fx,fy))
-            img[row, col] = gradient_map_final(mapLevels[row, col], angleVectors( xs,ys,zs, xsl, ysl, zsl ))
-            angles.append( angleVectors( xs,ys,zs, xsl, ysl, zsl ) )
-    print(min(angles)/100,max(angles)/100)
-    print( sum(angles)/len(angles)/100 )
+            angles[row,col] = vector_between_angles( xs,ys,zs, xsl,ysl,zsl )
+    return angles
+  
+
+def createImgFinal(mapLevels, delta):
+    img = np.zeros((500, 500, 3))
+    for row in range(500):
+        for col in range(500):
+            img[row, col] = gradient_map_base(mapLevels[row, col]) # bazowy import
+    angles = calculateAngles()
+    anglesVector = np.sort(np.reshape(angles,-1))
+    minAngles = min(anglesVector)
+    maxAngles = max(anglesVector)
+    for row in range(0,498):
+        for col in range(0,498):
+            normalize_vector = ((angles[row][col]-minAngles)/(maxAngles-minAngles))*2 - 1
+            position = np.where(anglesVector == angles[row][col])[0]
+            position = position[0]/len(angles)**2
+            img[row,col] = gradient_map_final(mapLevels[row,col], angles[row,col], position, normalize_vector)  
     return img
 
 
@@ -153,7 +184,6 @@ if __name__ == '__main__':
 
     #img = createImg(mapLevels)
     img = createImgFinal(mapLevels, delta)
-
     mapPlot = plt.subplot('111')
     mapPlot.imshow(img, aspect='auto')
     mapPlot.tick_params('both', direction='in')
