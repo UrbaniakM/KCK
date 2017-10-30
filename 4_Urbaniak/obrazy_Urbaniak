@@ -5,22 +5,22 @@ import numpy as np
 def polygon_area(x,y):
     return 0.5*np.abs(np.dot(x,np.roll(y,1))-np.dot(y,np.roll(x,1)))
 
-def detect_edges(image, n):
-    subPlt = plt.subplot(7,3,n+1)
+def detect_edges(image, k):
+    subPlt = plt.subplot(7,3,k+1)
     subPlt.axis('off')
     imageGray = img_as_ubyte(image)
-    percentileP, percentileK = np.percentile(image,(2,98))
+    percentileP, percentileK = np.percentile(image,(1,95))
     imageGray = exposure.rescale_intensity(imageGray,in_range=(percentileP,percentileK))
     imageGray = color.rgb2grey(imageGray)
     imageGray = morphology.closing(imageGray)
     imageGray = morphology.opening(imageGray)
-    for i in range(5):
+    for i in range(2):
         imageGray = morphology.dilation(imageGray)
         imageGray = morphology.erosion(imageGray)
     edges = measure.find_contours(imageGray, level=0.3, fully_connected='low', positive_orientation='high')
     for n, coords in enumerate(edges):
         sizeOfPolygon = polygon_area(coords[:,1],coords[:,0])
-        if (sizeOfPolygon > 700):# and (sizeOfPolygon < 30000):
+        if (sizeOfPolygon > 1700) and (sizeOfPolygon < 100000) and (coords[0,1] == coords[-1,1]) and (coords[0,0] == coords[-1,0]):
             subPlt.plot(coords[:, 1], coords[:, 0], linewidth=1)
             subPlt.plot(np.mean(coords[:,1]),np.mean(coords[:,0]), 'wo', markersize=3)
     subPlt.set_aspect('equal')
