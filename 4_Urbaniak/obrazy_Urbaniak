@@ -9,12 +9,12 @@ def detect_edges(image, k):
     subPlt = plt.subplot(7,3,k+1)
     subPlt.axis('off')
     imageGray = img_as_ubyte(image)
-    percentileP, percentileK = np.percentile(image,(1,95))
+    percentileP, percentileK = np.percentile(image,(1.5,97.5))
     imageGray = exposure.rescale_intensity(imageGray,in_range=(percentileP,percentileK))
     imageGray = color.rgb2grey(imageGray)
     imageGray = morphology.closing(imageGray)
     imageGray = morphology.opening(imageGray)
-    for i in range(2):
+    for i in range(5):
         imageGray = morphology.dilation(imageGray)
         imageGray = morphology.erosion(imageGray)
     edges = measure.find_contours(imageGray, level=0.3, fully_connected='low', positive_orientation='high')
