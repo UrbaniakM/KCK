@@ -32,7 +32,7 @@ def voice_gender_recognition(filename):
     
     freq, sig = filter_frequencies(signal,w, n)
     avg_freq = average_frequency(freq, sig)
-    if avg_freq < 165:
+    if avg_freq < 170:
         print('M')
         if is_male(filename):
             return 1
